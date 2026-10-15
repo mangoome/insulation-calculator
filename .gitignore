@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Production build output
+dist/
+
+# Tooling caches and incremental build metadata
+.vite/
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS and editor files
+.DS_Store
+.idea/
+.vscode/
+
