@@ -1,0 +1,31 @@
+{
+  "name": "insulation-calculator",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
+    "dexie": "^4.4.6",
+    "lucide-vue-next": "^0.468.0",
+    "pinia": "^2.2.6",
+    "tesseract.js": "^5.1.1",
+    "vue": "^3.5.13",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "fake-indexeddb": "^6.2.5",
+    "sass": "^1.83.1",
+    "typescript": "~5.7.2",
+    "vite": "^6.0.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^2.1.8",
+    "vue-tsc": "^2.2.0"
+  }
+}

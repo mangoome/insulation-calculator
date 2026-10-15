@@ -1,0 +1,28 @@
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    VitePWA({
+      registerType: 'prompt',
+      includeAssets: ['icon.svg', 'tesseract/**/*'],
+      manifest: {
+        name: 'Insulation Calculator',
+        short_name: 'Insulation',
+        description: 'Offline insulation material calculator for installers.',
+        theme_color: '#173f38',
+        background_color: '#f4f3ec',
+        display: 'standalone',
+        start_url: '.',
+        icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
+      },
+      workbox: {
+        globPatterns: ['**/*.{html,js,css,svg,webmanifest,wasm,gz}'],
+        maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
+        navigateFallback: 'index.html',
+      },
+    }),
+  ],
+})

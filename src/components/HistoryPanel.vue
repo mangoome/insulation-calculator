@@ -1,0 +1,9 @@
+<script setup lang="ts">
+import { Download, FileUp, History, Trash2 } from 'lucide-vue-next'
+import type { CalculationHistory } from '../types/insulation'
+defineProps<{ records: CalculationHistory[]; error?: string }>()
+const emit = defineEmits<{ select: [record: CalculationHistory]; remove: [id: string]; clear: []; backup: []; restore: [file: File] }>()
+function importFile(event: Event) { const file = (event.target as HTMLInputElement).files?.[0]; if (file) emit('restore', file); (event.target as HTMLInputElement).value = '' }
+function date(time: number) { return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(time) }
+</script>
+<template><section class="panel history-panel"><header><div><p class="eyebrow">Recent calculations</p><h2>History</h2></div><div><button @click="emit('backup')"><Download :size="16" /> Backup</button><label class="button"><FileUp :size="16" /> Restore<input type="file" accept="application/json" hidden @change="importFile" /></label></div></header><p v-if="error" class="error">{{ error }}</p><div v-if="!records.length" class="history-empty"><History :size="30" /><b>No saved calculations</b><span>Completed calculations are kept on this device.</span></div><div v-else class="history-list"><article v-for="record in records" :key="record.id"><button class="history-record" @click="emit('select', record)"><b>{{ record.jobIds.join(', ') || record.address || 'Manual calculation' }}</b><span>{{ date(record.updatedAt) }}</span><small>{{ record.materials.length }} material{{ record.materials.length === 1 ? '' : 's' }} · {{ record.totalPacks }} packs</small></button><button class="danger" aria-label="Delete history item" @click="emit('remove', record.id)"><Trash2 :size="16" /></button></article></div><button v-if="records.length" class="clear-history" @click="emit('clear')">Clear all history</button></section></template>
