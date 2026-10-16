@@ -16,11 +16,9 @@ import type { CalculationHistory, Job } from './types/insulation'
 
 const store = useInsulationStore(); const { progress, currentFile, error, process } = useOCR()
 const processing = ref(false); const status = ref(''); const storageError = ref(''); const history = ref<CalculationHistory[]>([]); const analysisText = ref(''); const analyzedJobs = ref<Job[]>([])
-// TEMPORARY OCR DEBUG: Set either value to false, or comment out its marked template block below, to hide the test output.
-const showRawOcrDebug = false;
-const showParsedObjectsDebug = false;
+const debugMode = ref(false)
 const showHistory = ref(false); const activeHistoryId = ref<string | null>(null); const online = ref(navigator.onLine)
-let saveTimer: ReturnType<typeof setTimeout> | undefined
+let saveTimer: ReturnType<typeof setTimeout> | undefined; let logoTapTimer: ReturnType<typeof setTimeout> | undefined; let logoTapCount = 0
 const canShare = computed(() => typeof navigator !== 'undefined' && 'share' in navigator)
 const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({ immediate: true })
 
@@ -59,6 +57,12 @@ async function clearHistory() { if (!window.confirm('Delete all saved calculatio
 async function backup() { try { const text = await historyService.backup(); const url = URL.createObjectURL(new Blob([text], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = 'insulation-history-backup.json'; link.click(); URL.revokeObjectURL(url) } catch { storageError.value = 'Could not create history backup.' } }
 async function restoreBackup(file: File) { try { const count = await historyService.restore(await file.text()); await refreshHistory(); status.value = `${count} history item${count === 1 ? '' : 's'} restored.` } catch (cause) { storageError.value = cause instanceof Error ? cause.message : 'Could not restore backup.' } }
 function updateOnlineStatus() { online.value = navigator.onLine }
+function toggleDebugFromLogo() {
+  logoTapCount += 1
+  if (logoTapTimer) clearTimeout(logoTapTimer)
+  if (logoTapCount === 5) { debugMode.value = !debugMode.value; logoTapCount = 0; return }
+  logoTapTimer = setTimeout(() => { logoTapCount = 0 }, 1500)
+}
 const analyzedObjectText = computed(() => JSON.stringify(analyzedJobs.value.map(job => ({
   jobId: job.jobId,
   title: job.title,
@@ -72,14 +76,14 @@ const analyzedObjectText = computed(() => JSON.stringify(analyzedJobs.value.map(
   })),
 })), null, 2))
 onMounted(() => { void refreshHistory(); window.addEventListener('online', updateOnlineStatus); window.addEventListener('offline', updateOnlineStatus) })
-onBeforeUnmount(() => { if (saveTimer) clearTimeout(saveTimer); window.removeEventListener('online', updateOnlineStatus); window.removeEventListener('offline', updateOnlineStatus) })
+onBeforeUnmount(() => { if (saveTimer) clearTimeout(saveTimer); if (logoTapTimer) clearTimeout(logoTapTimer); window.removeEventListener('online', updateOnlineStatus); window.removeEventListener('offline', updateOnlineStatus) })
 </script>
 <template>
   <main>
     <header class="hero">
-      <div class="brand">
+      <button type="button" class="brand" aria-label="Insulation Calculator" @click="toggleDebugFromLogo">
         <Sparkles :size="21" /><span>Insulation Calculator</span>
-      </div><button class="history-button" @click="showHistory = !showHistory">
+      </button><button class="history-button" @click="showHistory = !showHistory">
         <History :size="17" /> {{ showHistory ? 'Calculator' : 'History' }}
       </button>
       <h1>Turn work orders into<br /><em>an accurate material list.</em></h1>
@@ -104,14 +108,12 @@ onBeforeUnmount(() => { if (saveTimer) clearTimeout(saveTimer); window.removeEve
           </button></div>
         <ImageUploader @analyze="analyzeFiles" />
         <OCRProgress :progress="progress" :file="processing ? currentFile : ''" :error="error" />
-        <!-- TEMPORARY OCR DEBUG: Comment out this complete section to hide raw OCR text. -->
-        <section v-if="analysisText && showRawOcrDebug" class="panel analysis-result">
+        <section v-if="analysisText && debugMode" class="panel analysis-result">
           <p class="eyebrow">Temporary test output</p>
           <h2>Raw OCR text</h2>
           <p>Exact text read from the uploaded image.</p>
           <pre>{{ analysisText }}</pre>
-        </section><!-- TEMPORARY OCR DEBUG: Comment out this complete section to hide parsed Job ID/type objects. -->
-        <section v-if="analysisText && showParsedObjectsDebug" class="panel analysis-result">
+        </section><section v-if="analysisText && debugMode" class="panel analysis-result">
           <p class="eyebrow">Temporary test output</p>
           <h2>Separated job objects</h2>
           <p>Each object is split by Job ID and grouped by its insulation type number.</p>

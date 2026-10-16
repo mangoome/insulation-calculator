@@ -40,7 +40,12 @@ type FormLabel = typeof formLabels[number]
 type BoundFields = Partial<Record<FormLabel, string>>
 
 function bindFields(source: string): BoundFields {
+  // The small italic number in the printed field label is often read as I or l.
+  // Restrict this correction to the label itself so material descriptions are untouched.
   const text = normaliseOCR(source)
+    .replace(/[\[{(]?msulation\b/gi, 'Insulation')
+    .replace(/(?:^|[\s-])[\[{(]reas\s+([Il12])\b/gi, ' Install Areas $1')
+    .replace(/\b((?:m2\s+of\s+)?insulation\s+type\s+)[Il]\b/gi, '$11')
   const lower = text.toLowerCase()
   const markers = formLabels.flatMap(label => {
     const matches: Array<{ label: FormLabel; start: number; end: number }> = []
@@ -60,6 +65,39 @@ function bindFields(source: string): BoundFields {
     if (value) fields[marker.label] = value
     return fields
   }, {})
+}
+
+function repairWrappedPackNotes(fields: BoundFields, source: string): BoundFields {
+  const type1 = fields['Insulation type 1']
+  let type2 = fields['Insulation type 2']
+  const packNotes = [...normaliseOCR(source).matchAll(/\bper\s*pack(?:\s*\([^)]*\))?/gi)].map(match => match[0])
+
+  // In side-by-side fields, OCR can place both wrapped notes after type 2.
+  // When two notes exist, the first still belongs to type 1.
+  if (type1 && type2 && packNotes.length >= 2 && !/\bper\s*pack\b/i.test(type1)) {
+    const firstPackInType2 = type2.match(/per\s*pack(?:\s*\([^)]*\))?/i)?.[0]
+    if (firstPackInType2) {
+      fields['Insulation type 1'] = `${type1} ${firstPackInType2}`.trim()
+      type2 = type2.replace(firstPackInType2, '').trim()
+      fields['Insulation type 2'] = type2
+    }
+  }
+
+  const leadingPack = type2?.match(/^\s*(per\s*pack(?:\s*\([^)]*\))?)/i)?.[1]
+  if (!leadingPack || !type2) return fields
+
+  // In a two-column form, OCR can place the type 2 label between type 1's first
+  // line and its wrapped "per pack" note. Move that first note back to type 1.
+  if (type1 && !/\bper\s*pack\b/i.test(type1)) fields['Insulation type 1'] = `${type1} ${leadingPack}`.trim()
+  const remainingType2 = type2.slice(leadingPack.length).trim()
+  // A lone wrapped note is not a material, so it must not create a type 2 object.
+  if (!remainingType2) { delete fields['Insulation type 2']; return fields }
+
+  // With two pack notes, the second one belongs to the type 2 material. Keep it
+  // attached even if OCR split it away from the rest of that material description.
+  if (packNotes.length >= 2 && !/\bper\s*pack\b/i.test(remainingType2)) fields['Insulation type 2'] = `${remainingType2} ${packNotes[1]}`.trim()
+  else fields['Insulation type 2'] = remainingType2
+  return fields
 }
 
 function splitJobs(source: string): string[] {
@@ -87,6 +125,7 @@ function numberedInsulation(fields: BoundFields, type: 1 | 2): Material | undefi
   const installationArea = areaText?.match(/\d+(?:\.\d+)?/)?.[0]
   return {
     id: `type-${type}`,
+    insulationTypeNumber: type,
     ...parseMaterial(materialText ?? installTypeArea ?? ''),
     insulationType: materialText,
     installationArea: installationArea ? Number(installationArea) : undefined,
@@ -113,7 +152,7 @@ function jobTitle(fields: BoundFields, source: string): { title?: string } {
 export function parseJobs(source: string): Job[] {
   const chunks = splitJobs(source.replace(/\r/g, '')).filter(part => part.trim())
   return chunks.map((chunk, index) => {
-    const fields = bindFields(chunk)
+    const fields = repairWrappedPackNotes(bindFields(chunk), chunk)
     const materials = ([1, 2] as const).map(type => numberedInsulation(fields, type)).filter((material): material is Material => Boolean(material))
     return { id: crypto.randomUUID(), jobId: fields['Job ID'], ...jobTitle(fields, chunk), materials, sourceText: chunk }
   }).filter(job => job.jobId || job.materials.length)

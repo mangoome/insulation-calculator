@@ -54,12 +54,21 @@ main {
     color: #f9f7ed;
 }
 .brand {
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     display: flex;
     align-items: center;
     gap: 8px;
     color: #9be0c2;
     font-size: 0.9rem;
     font-weight: 800;
+}
+.brand:hover,
+.brand:focus-visible {
+    background: transparent;
 }
 h1 {
     margin: 35px 0 12px;
@@ -255,9 +264,28 @@ h1 em {
     align-items: center;
     justify-content: space-between;
 }
+.material-head > div {
+    display: grid;
+    gap: 3px;
+}
 .material-head b {
+    display: block;
     color: #a97821;
     font-size: 0.7rem;
+}
+.insulation-type {
+    color: #52645d;
+    font:
+        600 0.65rem ui-monospace,
+        monospace;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.coverage-warning {
+    margin: 1px 0 0;
+    color: #bf2f2f;
+    font-size: 0.75rem;
+    font-weight: 600;
 }
 .metrics {
     display: flex;

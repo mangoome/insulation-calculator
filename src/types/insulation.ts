@@ -1,6 +1,7 @@
 export interface Material {
   id: string
   description: string
+  insulationTypeNumber?: 1 | 2
   insulationType?: string
   brand?: string
   category?: string
