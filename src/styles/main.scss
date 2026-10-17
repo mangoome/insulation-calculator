@@ -494,6 +494,16 @@ h1 em {
     background: #102e2a;
     color: #d4f5df;
 }
+.site-footer {
+    max-width: 1060px;
+    margin: 22px auto 0;
+    padding: 0 18px;
+    text-align: center;
+}
+.site-footer a {
+    color: #5c716a;
+    font-size: 0.78rem;
+}
 @media (max-width: 680px) {
     .hero {
         padding-top: 25px;

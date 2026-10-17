@@ -143,5 +143,8 @@ onBeforeUnmount(() => { if (saveTimer) clearTimeout(saveTimer); if (logoTapTimer
           </button><button @click="saveCurrent(true)">Save now</button><span>{{ status }}</span></div>
       </template>
     </div>
+    <footer class="site-footer">
+      <a href="/privacy/">Privacy Policy</a>
+    </footer>
   </main>
 </template>
